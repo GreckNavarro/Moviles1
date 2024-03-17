@@ -8,12 +8,19 @@ public class ControladorFiguras : MonoBehaviour
 {
     [SerializeField] GameObject[] FigureArray;
     [SerializeField] GameObject CurrentFigure;
+     List<GameObject> FigureList;
+
+
+    public bool tapping = false;
+    public float lastTapTime = 0;
+    public float doubleTapThreshold = 0.3f;
+
 
 
 
     void Start()
     {
-
+        FigureList = new List<GameObject>();
     }
 
     // Update is called once per frame
@@ -21,32 +28,71 @@ public class ControladorFiguras : MonoBehaviour
     {
         if (Input.touchCount > 0)
         {
-            Touch touch = Input.GetTouch(0);
-            int tapcount = 0;
 
+            Touch touch = Input.GetTouch(0);        
             if (touch.phase == TouchPhase.Began)
             {
-                Vector2 pos = Camera.main.ScreenToWorldPoint(touch.position);
-                Instantiate(CurrentFigure, pos, Quaternion.identity);
 
-                RaycastHit hit;
-
-                if(Physics.Raycast(new Vector3(pos.x, pos.y, -10), Vector3.forward, out hit, 100f))
+                if (!tapping)
                 {
-                    Debug.Log("Se hizo el raycast");
-                    Debug.DrawLine(new Vector3(pos.x, pos.y, -10), Vector3.forward * 100, Color.green, 5.0f);
+                    tapping = true;
+                    StartCoroutine(SingleTap(touch.position));
+                    
+                }
 
-                    if (hit.collider.gameObject.tag == "Figura")
+
+                if ((Time.time - lastTapTime) < doubleTapThreshold)
+                {
+                    Debug.Log("DoubleTap");
+                    tapping = false;
+                    Vector2 secondTapPosition = touch.position;
+                    RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(secondTapPosition), Vector2.zero);
+                    if (hit.collider != null)
                     {
-                        Debug.Log("Hola");
-                        Debug.DrawLine(new Vector3(pos.x, pos.y, -10), Vector3.forward, Color.green);
+                        GameObject figuraHit = hit.collider.gameObject;
+                        if (FigureList.Contains(figuraHit))
+                        {
+                            FigureList.Remove(figuraHit);
+                            Destroy(figuraHit);
+                        }
                     }
                 }
+
+                lastTapTime = Time.time;
 
             }
             
         }
     }
+
+    IEnumerator SingleTap(Vector2 touchposition)
+    {
+        yield return new WaitForSeconds(doubleTapThreshold);
+        if (tapping)
+        {
+            Debug.Log("Creando Figura");
+            Vector2 pos = Camera.main.ScreenToWorldPoint(touchposition);
+            if (pos.y < 3.0f)
+            {
+                GameObject newFigure = Instantiate(CurrentFigure, pos, Quaternion.identity);
+                FigureList.Add(newFigure);
+            }
+
+        }
+        tapping = false;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     public void ChangeSquare()
     {
