@@ -6,71 +6,135 @@ using UnityEngine.UI;
 
 public class ControladorFiguras : MonoBehaviour
 {
+
+    //CREACION FIGURAS
     [SerializeField] GameObject[] FigureArray;
     [SerializeField] GameObject CurrentFigure;
-     List<GameObject> FigureList;
+    List<GameObject> FigureList;
+
+    // DOUBLE TAP;
+    bool tapping = false;
+    float lastTapTime = 0;
+    float doubleTapThreshold = 0.2f;
+
+    //PRESS AND DRAG
+    bool presstouch = false;
+    GameObject FiguraMover;
 
 
-    public bool tapping = false;
-    public float lastTapTime = 0;
-    public float doubleTapThreshold = 0.3f;
+
+    //SWIPE
+    Vector2 startPos;
+    Vector2 endPos;
+    [SerializeField] float swipeThreshold = 300f;
+    bool endswipe = true;
+    bool swiperealizado = false;
+
+    [SerializeField] GameObject trailRenderer;
 
 
 
 
+  
     void Start()
     {
         FigureList = new List<GameObject>();
+        trailRenderer.SetActive(false);
+        trailRenderer.GetComponent<TrailRenderer>().startColor = CurrentFigure.GetComponent<SpriteRenderer>().color;
+        trailRenderer.GetComponent<TrailRenderer>().endColor = CurrentFigure.GetComponent<SpriteRenderer>().color;
+
+
     }
 
-    // Update is called once per frame
+
     void Update()
     {
         if (Input.touchCount > 0)
         {
 
-            Touch touch = Input.GetTouch(0);        
+            Touch touch = Input.GetTouch(0);
+
+            Vector2 updatetrailposition = Camera.main.ScreenToWorldPoint(touch.position);
+            trailRenderer.transform.position = updatetrailposition;
+            
+
+            
+
             if (touch.phase == TouchPhase.Began)
             {
+
+                startPos = touch.position;
+                swiperealizado = false;
+                
+
+               
+
+
 
                 if (!tapping)
                 {
                     tapping = true;
                     StartCoroutine(SingleTap(touch.position));
-                    
                 }
 
 
                 if ((Time.time - lastTapTime) < doubleTapThreshold)
                 {
-                    Debug.Log("DoubleTap");
                     tapping = false;
                     Vector2 secondTapPosition = touch.position;
                     RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(secondTapPosition), Vector2.zero);
                     if (hit.collider != null)
                     {
                         GameObject figuraHit = hit.collider.gameObject;
-                        if (FigureList.Contains(figuraHit))
-                        {
-                            FigureList.Remove(figuraHit);
-                            Destroy(figuraHit);
-                        }
+                        FigureList.Remove(figuraHit);
+                        Destroy(figuraHit);
+
                     }
                 }
-
                 lastTapTime = Time.time;
 
             }
-            
+            if (touch.phase == TouchPhase.Moved)
+            {
+                    presstouch = true;
+                    PressAndDrag(touch.position);
+                    trailRenderer.SetActive(true);
+
+
+            }
+
+            if (touch.phase == TouchPhase.Ended)
+            {
+                presstouch = false;
+                FiguraMover = null;
+
+                endPos = touch.position;
+                Vector2 DiferencePosition = endPos - startPos;
+                if(DiferencePosition.magnitude > swipeThreshold && endswipe == true)
+                {
+
+                    for (int i = 0; i < FigureList.Count; i++)
+                    {
+                        Destroy(FigureList[i]);
+                    }
+
+                    FigureList.Clear();
+                    swiperealizado = true;
+                }
+
+                endswipe = true;
+                trailRenderer.SetActive(false);
+            }
+
+
         }
     }
 
     IEnumerator SingleTap(Vector2 touchposition)
     {
         yield return new WaitForSeconds(doubleTapThreshold);
-        if (tapping)
+        if (tapping && presstouch == false && swiperealizado == false)
         {
-            Debug.Log("Creando Figura");
             Vector2 pos = Camera.main.ScreenToWorldPoint(touchposition);
             if (pos.y < 3.0f)
             {
@@ -80,6 +144,27 @@ public class ControladorFiguras : MonoBehaviour
 
         }
         tapping = false;
+    }
+
+
+    void PressAndDrag(Vector2 touchPosition)
+    {
+        Vector2 touchpos = Camera.main.ScreenToWorldPoint(touchPosition);
+
+        if (FiguraMover == null)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(touchpos, Vector2.zero);
+            if (hit.collider != null)
+            {
+                FiguraMover = hit.collider.gameObject;
+            }
+        }
+
+        if (FiguraMover != null)
+        {
+            FiguraMover.transform.position = touchpos;
+            endswipe = false;
+        }
     }
 
 
@@ -97,13 +182,19 @@ public class ControladorFiguras : MonoBehaviour
     public void ChangeSquare()
     {
         CurrentFigure = FigureArray[2];
+        trailRenderer.GetComponent<TrailRenderer>().startColor = FigureArray[2].GetComponent<SpriteRenderer>().color;
+        trailRenderer.GetComponent<TrailRenderer>().endColor = FigureArray[2].GetComponent<SpriteRenderer>().color;
     }
     public void ChangeTriangle()
     {
         CurrentFigure = FigureArray[0];
+        trailRenderer.GetComponent<TrailRenderer>().startColor = FigureArray[0].GetComponent<SpriteRenderer>().color;
+        trailRenderer.GetComponent<TrailRenderer>().endColor = FigureArray[0].GetComponent<SpriteRenderer>().color;
     }
     public void ChangeCircle()
     {
         CurrentFigure = FigureArray[1];
+        trailRenderer.GetComponent<TrailRenderer>().startColor = FigureArray[1].GetComponent<SpriteRenderer>().color;
+        trailRenderer.GetComponent<TrailRenderer>().endColor = FigureArray[1].GetComponent<SpriteRenderer>().color;
     }
 }
