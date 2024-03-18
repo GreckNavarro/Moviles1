@@ -74,6 +74,7 @@ public class ControladorFiguras : MonoBehaviour
                 if (hit.collider != null)
                 {
                         FiguraMover = hit.collider.gameObject;
+                    presstouch = true;
 
                 }
                 
