@@ -11,6 +11,7 @@ public class ControladorFiguras : MonoBehaviour
     [SerializeField] GameObject[] FigureArray;
     [SerializeField] GameObject CurrentFigure;
     List<GameObject> FigureList;
+    
 
     // DOUBLE TAP;
     bool tapping = false;
@@ -65,9 +66,17 @@ public class ControladorFiguras : MonoBehaviour
 
                 startPos = touch.position;
                 swiperealizado = false;
-                
 
-               
+                Vector2 touchpos = Camera.main.ScreenToWorldPoint(touch.position);
+
+                
+                RaycastHit2D hit = Physics2D.Raycast(touchpos, Vector2.zero);
+                if (hit.collider != null)
+                {
+                        FiguraMover = hit.collider.gameObject;
+
+                }
+                
 
 
 
@@ -82,10 +91,10 @@ public class ControladorFiguras : MonoBehaviour
                 {
                     tapping = false;
                     Vector2 secondTapPosition = touch.position;
-                    RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(secondTapPosition), Vector2.zero);
+                    RaycastHit2D hitdoubletap = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(secondTapPosition), Vector2.zero);
                     if (hit.collider != null)
                     {
-                        GameObject figuraHit = hit.collider.gameObject;
+                        GameObject figuraHit = hitdoubletap.collider.gameObject;
                         FigureList.Remove(figuraHit);
                         Destroy(figuraHit);
 
@@ -94,6 +103,7 @@ public class ControladorFiguras : MonoBehaviour
                 lastTapTime = Time.time;
 
             }
+
             if (touch.phase == TouchPhase.Moved)
             {
                     presstouch = true;
@@ -150,16 +160,6 @@ public class ControladorFiguras : MonoBehaviour
     void PressAndDrag(Vector2 touchPosition)
     {
         Vector2 touchpos = Camera.main.ScreenToWorldPoint(touchPosition);
-
-        if (FiguraMover == null)
-        {
-            RaycastHit2D hit = Physics2D.Raycast(touchpos, Vector2.zero);
-            if (hit.collider != null)
-            {
-                FiguraMover = hit.collider.gameObject;
-            }
-        }
-
         if (FiguraMover != null)
         {
             FiguraMover.transform.position = touchpos;
